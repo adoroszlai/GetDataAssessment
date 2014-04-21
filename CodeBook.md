@@ -4,7 +4,9 @@
 
 ### Input
 
-Human Activity Recognition Using Smartphones ([zip](https://d396qusza40orc.cloudfront.net/getdata%2Fprojectfiles%2FUCI%20HAR%20Dataset.zip), [info](http://archive.ics.uci.edu/ml/datasets/Human+Activity+Recognition+Using+Smartphones))
+Human Activity Recognition Using Smartphones
+([zip](https://d396qusza40orc.cloudfront.net/getdata%2Fprojectfiles%2FUCI%20HAR%20Dataset.zip),
+[info](http://archive.ics.uci.edu/ml/datasets/Human+Activity+Recognition+Using+Smartphones))
 
 The source dataset was "built from the recordings of 30 subjects performing
 activities of daily living while carrying a waist-mounted smartphone with
@@ -63,5 +65,3 @@ observations (30 subjects * 6 activities) of 82 variables:
     descriptive than `V1` etc.
  1. Multiple observations for the same subject and activity are averaged.
  1. Finally the resulting tidy dataset is written to `tidy.txt` in CSV format.
-
-<!-- vim: ft=markdown et ts=4 sts=4 sw=4 tw=80
