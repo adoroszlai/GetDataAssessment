@@ -1,45 +1,73 @@
-testing = T # limit number of rows/columns during development
+debug = F # print some progress info
 
 library(reshape2)
 
+# Read measurements
 measurements <- read.table('UCI HAR Dataset/features.txt', colClasses = c('numeric', 'character'), comment.char = '')
 colnames(measurements) <- c('id', 'name')
 
-# apply dev limit
-line_limit <- if (testing) 100 else -1
-measurement_count <- if (testing) 3 else length(measurements$id)
-if (testing) {
-	measurements <- measurements[1:measurement_count,]
+# "2. Extract only the measurements on the mean and standard deviation for each
+# measurement"
+#
+# Apply this limitation right away in the read phase to lower memory and time
+# requirements compared to reading all columns and discarding unwanted ones
+# after the merge.
+measurements_wanted <- grepl('-(mean|std)', measurements$name)
+widths = c()
+for (i in seq_along(measurements_wanted)) {
+    wanted <- measurements_wanted[i]
+    widths <- append(widths, if (wanted) c(-1, 15) else -16)
 }
 
-train <- read.fwf('UCI HAR Dataset/train/X_train.txt', widths = rep(c(-1, 15), measurement_count), colClasses = 'numeric', comment.char = '', n = line_limit)
-train$y <- read.fwf('UCI HAR Dataset/train/y_train.txt', widths = 1, colClasses = 'numeric', comment.char = '', n = line_limit)[, 1]
-train$subject <- read.fwf('UCI HAR Dataset/train/subject_train.txt', widths = 2, colClasses = 'numeric', comment.char = '', n = line_limit)[, 1]
+if (debug) print(c(date(), "start reading data"))
 
-test <- read.fwf('UCI HAR Dataset/test/X_test.txt', widths = rep(c(-1, 15), measurement_count), colClasses = 'numeric', comment.char = '', n = line_limit)
-test$y <- read.fwf('UCI HAR Dataset/test/y_test.txt', widths = 1, colClasses = 'numeric', comment.char = '', n = line_limit)[, 1]
-test$subject <- read.fwf('UCI HAR Dataset/test/subject_test.txt', widths = 2, colClasses = 'numeric', comment.char = '', n = line_limit)[,1]
+# Read 'training' data
+train <- read.fwf('UCI HAR Dataset/train/X_train.txt', widths = widths, colClasses = 'numeric', comment.char = '')
+train$activitycode <- read.fwf('UCI HAR Dataset/train/y_train.txt', widths = 1, colClasses = 'numeric', comment.char = '')[, 1]
+train$subject <- read.fwf('UCI HAR Dataset/train/subject_train.txt', widths = 2, colClasses = 'numeric', comment.char = '')[, 1]
 
-# 1. Merge the training and the test sets to create one data set
-# (merge by columns, since training and test data contain same variables for same kind of observations for different volunteers)
+if (debug) print(c(date(), "read training data"))
+
+# Read 'test' data
+test <- read.fwf('UCI HAR Dataset/test/X_test.txt', widths = widths, colClasses = 'numeric', comment.char = '')
+test$activitycode <- read.fwf('UCI HAR Dataset/test/y_test.txt', widths = 1, colClasses = 'numeric', comment.char = '')[, 1]
+test$subject <- read.fwf('UCI HAR Dataset/test/subject_test.txt', widths = 2, colClasses = 'numeric', comment.char = '')[,1]
+
+if (debug) print(c(date(), "read test data"))
+
+# "1. Merge the training and the test sets to create one data set"
+#
+# Merge by columns, since training and test data contain the same variables for
+# same kind of observations for different subjects.
 all <- merge(train, test, all = T)
 
-# 2. Extract only the measurements on the mean and standard deviation for each measurement
-# (and also keep additional data
-measurements_wanted <- grep('-(mean|std)', measurements$name)
-all <- all[, c(measurements_wanted, (measurement_count+1):(measurement_count+2))]
+if (debug) print(c(date(), "merged data"))
 
-# 3. Use descriptive activity names to name the activities in the data set
+# "3. Use descriptive activity names to name the activities in the data set"
 activities <- read.table('UCI HAR Dataset/activity_labels.txt', colClasses = c('numeric', 'character'), comment.char = '')
 colnames(activities) <- c('id', 'name')
-all$activity <- factor(all$y, levels = activities$id, labels = activities$name)
+all$activityname <- factor(all$activitycode, levels = activities$id, labels = activities$name)
 
-# 4. Appropriately label the data set with descriptive activity names
-measurement_indexes <- 1:length(measurements_wanted)
-measurement_names <- measurements[measurements_wanted, 'name']
-colnames(all)[measurement_indexes] <- measurement_names
+if (debug) print(c(date(), "added 'activityname' column"))
 
-# 5. Create a second, independent tidy data set with the average of each variable for each activity and each subject
+# "4. Appropriately label the data set with descriptive activity names"
+#
+# This requirement refers to 'activity' names, which is already taken care of in
+# requirement #3.  Thus I assume this refers to 'measurement' names instead, and
+# label those columns appropriately.
+measurement_indexes <- which(measurements_wanted)
+measurement_names <- measurements[measurement_indexes, 'name']
+colnames(all)[seq_along(measurement_names)] <- measurement_names
+
+if (debug) print(c(date(), "renamed measurement columns"))
+
+# "5. Create a second, independent tidy data set with the average of each
+# variable for each activity and each subject"
 molten <- melt(all, measure.vars = measurement_names)
-averages <- dcast(molten, y + subject + activity ~ variable, mean)
-colnames(averages)[-(1:3)] <- paste("Average.", colnames(averages)[-(1:3)], sep = '')
+tidy <- dcast(molten, subject + activitycode + activityname ~ variable, mean)
+
+if (debug) print(c(date(), "created tidy dataset"))
+
+# Write the tidy dataset to file to be able to upload.
+write.csv(tidy, file = 'tidy.txt')
+if (debug) print(c(date(), "written tidy dataset to tidy.txt"))
