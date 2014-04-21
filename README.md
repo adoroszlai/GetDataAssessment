@@ -22,7 +22,7 @@ The goal of this script is to produce the tidy dataset.  For that end it
 
 This script assumes the dataset zip file is already extracted and data files are present in the `UCI HAR Dataset` directory.
 
-It requires the [http://cran.r-project.org/web/packages/reshape2/index.html](reshape2) R package.
+It requires the [reshape2](http://cran.r-project.org/web/packages/reshape2/index.html) R package.
 
 ## Code book
 
