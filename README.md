@@ -1,5 +1,7 @@
 # Getting and Cleaning Data project
 
+This readme gives an overview of the project structure and the scripts.
+
 ## Scripts
 
 ### `download.R`
@@ -12,11 +14,15 @@ This script is for convenience only, downloading and extracting may be performed
 
 ### `run_analysis.R`
 
+The goal of this script is to produce the tidy dataset.  For that end it
+
  * reads the raw data from various files in the `UCI HAR Dataset` directory (relative to the working directory),
  * performs the merging and cleaning steps as per the project specification,
  * saves the tidy dataset in CSV format as `tidy.txt` in the working directory.
 
 This script assumes the dataset zip file is already extracted and data files are present in the `UCI HAR Dataset` directory.
+
+It requires the [http://cran.r-project.org/web/packages/reshape2/index.html](reshape2) R package.
 
 ## Code book
 
